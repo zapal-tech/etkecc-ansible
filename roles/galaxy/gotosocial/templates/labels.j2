@@ -1,15 +1,35 @@
 {#
 SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
+SPDX-FileCopyrightText: 2023 Slavi Pantaleev
 
 SPDX-License-Identifier: AGPL-3.0-or-later
 #}
 
 {% if gotosocial_container_labels_traefik_enabled %}
+traefik.enable=true
+
 {% if gotosocial_container_labels_traefik_docker_network %}
 traefik.docker.network={{ gotosocial_container_labels_traefik_docker_network }}
 {% endif %}
+{% endif %}
+
+traefik.http.services.{{ gotosocial_identifier }}.loadbalancer.server.port={{ gotosocial_container_http_port }}
+{% if gotosocial_metrics_enabled %}
+traefik.http.services.{{ gotosocial_identifier }}-metrics.loadbalancer.server.port={{ gotosocial_container_metrics_port }}
+{% endif %}
 
 {% set middlewares = [] %}
+
+{% if gotosocial_container_labels_traefik_path_prefix != '/' %}
+traefik.http.middlewares.{{ gotosocial_identifier }}-slashless-redirect.redirectregex.regex=^({{ gotosocial_container_labels_traefik_path_prefix | quote }})$
+traefik.http.middlewares.{{ gotosocial_identifier }}-slashless-redirect.redirectregex.replacement=${1}/
+{% set middlewares = middlewares + [gotosocial_identifier + '-slashless-redirect'] %}
+{% endif %}
+
+{% if gotosocial_container_labels_traefik_path_prefix != '/' %}
+traefik.http.middlewares.{{ gotosocial_identifier }}-strip-prefix.stripprefix.prefixes={{ gotosocial_container_labels_traefik_path_prefix }}
+{% set middlewares = middlewares + [gotosocial_identifier + '-strip-prefix'] %}
+{% endif %}
 
 {% if gotosocial_container_labels_traefik_additional_request_headers.keys() | length > 0 %}
 {% for name, value in gotosocial_container_labels_traefik_additional_request_headers.items() %}
@@ -25,21 +45,64 @@ traefik.http.middlewares.{{ gotosocial_identifier }}-add-response-headers.header
 {% set middlewares = middlewares + [gotosocial_identifier + '-add-response-headers'] %}
 {% endif %}
 
-traefik.enable=true
-{% endif %}
-traefik.http.routers.{{ gotosocial_identifier }}.rule=Host("{{ gotosocial_hostname }}")
+traefik.http.routers.{{ gotosocial_identifier }}.rule={{ gotosocial_container_labels_traefik_rule }}
 {% if gotosocial_container_labels_traefik_priority | int > 0 %}
 traefik.http.routers.{{ gotosocial_identifier }}.priority={{ gotosocial_container_labels_traefik_priority }}
 {% endif %}
+traefik.http.routers.{{ gotosocial_identifier }}.service={{ gotosocial_identifier }}
 {% if middlewares | length > 0 %}
 traefik.http.routers.{{ gotosocial_identifier }}.middlewares={{ middlewares | join(',') }}
 {% endif %}
-traefik.http.routers.{{ gotosocial_identifier }}.service={{ gotosocial_identifier }}
 traefik.http.routers.{{ gotosocial_identifier }}.entrypoints={{ gotosocial_container_labels_traefik_entrypoints }}
 traefik.http.routers.{{ gotosocial_identifier }}.tls={{ gotosocial_container_labels_traefik_tls | to_json }}
 {% if gotosocial_container_labels_traefik_tls %}
 traefik.http.routers.{{ gotosocial_identifier }}.tls.certResolver={{ gotosocial_container_labels_traefik_tls_certResolver }}
+
+
+{% if gotosocial_container_labels_metrics_enabled %}
+############################################################
+#                                                          #
+# Metrics                                                  #
+#                                                          #
+############################################################
+
+{% set middlewares = gotosocial_container_labels_metrics_middlewares %}
+
+{% if gotosocial_container_labels_metrics_middleware_basic_auth_enabled %}
+traefik.http.middlewares.{{ gotosocial_identifier }}-metrics-basic-auth.basicauth.users={{ gotosocial_container_labels_metrics_middleware_basic_auth_users }}
+{% set middlewares = middlewares + [gotosocial_identifier + '-metrics-basic-auth'] %}
 {% endif %}
-traefik.http.services.{{ gotosocial_identifier }}.loadbalancer.server.port={{ gotosocial_container_http_port }}
+
+traefik.http.middlewares.{{ gotosocial_identifier }}-metrics-replace-path.replacepath.path=/metrics
+{% set middlewares = middlewares + [gotosocial_identifier + '-metrics-replace-path'] %}
+
+traefik.http.routers.{{ gotosocial_identifier }}-metrics.rule={{ gotosocial_container_labels_metrics_rule }}
+
+{% if gotosocial_container_labels_metrics_priority | int > 0 %}
+traefik.http.routers.{{ gotosocial_identifier }}-metrics.priority={{ gotosocial_container_labels_metrics_priority }}
+{% endif %}
+
+traefik.http.routers.{{ gotosocial_identifier }}-metrics.service={{ gotosocial_identifier }}-metrics
+
+{% if middlewares | length > 0 %}
+traefik.http.routers.{{ gotosocial_identifier }}-metrics.middlewares={{ middlewares | join(',') }}
+{% endif %}
+
+traefik.http.routers.{{ gotosocial_identifier }}-metrics.entrypoints={{ gotosocial_container_labels_metrics_entrypoints }}
+
+traefik.http.routers.{{ gotosocial_identifier }}-metrics.tls={{ gotosocial_container_labels_metrics_tls | to_json }}
+{% if gotosocial_container_labels_metrics_tls %}
+traefik.http.routers.{{ gotosocial_identifier }}-metrics.tls.certResolver={{ gotosocial_container_labels_metrics_tls_certResolver }}
+{% endif %}
+
+############################################################
+#                                                          #
+# /Metrics                                                 #
+#                                                          #
+############################################################
+{% endif %}
+
+
+{% endif %}
 
 {{ gotosocial_container_labels_additional_labels }}

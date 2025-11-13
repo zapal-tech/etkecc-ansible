@@ -14,13 +14,13 @@ ntfy_enabled: true
 ntfy_identifier: ntfy
 
 ntfy_base_path: "/{{ ntfy_identifier }}"
-ntfy_config_dir_path: "{{ ntfy_base_path }}/config"
+ntfy_config_path: "{{ ntfy_base_path }}/config"
 ntfy_data_path: "{{ ntfy_base_path }}/data"
 ntfy_cache_path: "{{ ntfy_base_path }}/cache"
-ntfy_attachment_cache_dir_path: "{{ ntfy_cache_path }}/attachments"
+ntfy_attachment_cache_path: "{{ ntfy_cache_path }}/attachments"
 
 # renovate: datasource=docker depName=docker.io/binwiederhier/ntfy
-ntfy_version: v2.13.0
+ntfy_version: v2.14.0
 
 ntfy_uid: ''
 ntfy_gid: ''
@@ -77,8 +77,14 @@ ntfy_container_labels_traefik_entrypoints: web-secure
 ntfy_container_labels_traefik_tls: "{{ ntfy_container_labels_traefik_entrypoints != 'web' }}"
 ntfy_container_labels_traefik_tls_certResolver: default  # noqa var-naming
 
+# Controls which additional headers to attach to all HTTP requests.
+# To add your own custom request headers, use `ntfy_container_labels_traefik_additional_request_headers_custom`
+ntfy_container_labels_traefik_additional_request_headers: "{{ ntfy_container_labels_traefik_additional_request_headers_auto | combine(ntfy_container_labels_traefik_additional_request_headers_custom) }}"
+ntfy_container_labels_traefik_additional_request_headers_auto: {}
+ntfy_container_labels_traefik_additional_request_headers_custom: {}
+
 # Controls which additional headers to attach to all HTTP responses.
-# To add your own headers, use `ntfy_container_labels_traefik_additional_response_headers_custom`
+# To add your own custom response headers, use `ntfy_container_labels_traefik_additional_response_headers_custom`
 ntfy_container_labels_traefik_additional_response_headers: "{{ ntfy_container_labels_traefik_additional_response_headers_auto | combine(ntfy_container_labels_traefik_additional_response_headers_custom) }}"
 ntfy_container_labels_traefik_additional_response_headers_auto: |
   {{
@@ -86,7 +92,7 @@ ntfy_container_labels_traefik_additional_response_headers_auto: |
     | combine ({'X-XSS-Protection': ntfy_http_header_xss_protection} if ntfy_http_header_xss_protection else {})
     | combine ({'X-Content-Type-Options': ntfy_http_header_content_type_options} if ntfy_http_header_content_type_options else {})
     | combine ({'Content-Security-Policy': ntfy_http_header_content_security_policy} if ntfy_http_header_content_security_policy else {})
-    | combine ({'Permission-Policy': ntfy_http_header_content_permission_policy} if ntfy_http_header_content_permission_policy else {})
+    | combine ({'Permissions-Policy': ntfy_http_header_permissions_policy} if ntfy_http_header_permissions_policy else {})
     | combine ({'Strict-Transport-Security': ntfy_http_header_strict_transport_security} if ntfy_http_header_strict_transport_security and ntfy_container_labels_traefik_tls else {})
   }}
 ntfy_container_labels_traefik_additional_response_headers_custom: {}
@@ -130,9 +136,9 @@ ntfy_http_header_content_type_options: nosniff
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
 ntfy_http_header_content_security_policy: frame-ancestors 'self'
 
-# Specifies the value of the `Permission-Policy` header.
-# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permission-Policy
-ntfy_http_header_content_permission_policy: "{{ 'interest-cohort=()' if ntfy_floc_optout_enabled else '' }}"
+# Specifies the value of the `Permissions-Policy` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy
+ntfy_http_header_permissions_policy: "{{ 'interest-cohort=()' if ntfy_floc_optout_enabled else '' }}"
 
 # Specifies the value of the `Strict-Transport-Security` header.
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
@@ -146,7 +152,7 @@ ntfy_http_header_strict_transport_security: "max-age=31536000; includeSubDomains
 # - https://amifloced.org/
 #
 # Of course, a better solution is to just stop using browsers (like Chrome), which participate in such tracking practices.
-# See: `ntfy_content_permission_policy`
+# See: `ntfy_http_header_permissions_policy`
 ntfy_floc_optout_enabled: true
 
 # Controls if HSTS preloading is enabled
@@ -168,7 +174,15 @@ ntfy_systemd_required_services_list_auto: []
 ntfy_systemd_required_services_list_custom: []
 
 # List of systemd services that the ntfy systemd service wants
-ntfy_systemd_wanted_services_list: []
+ntfy_systemd_wanted_services_list: "{{ ntfy_systemd_wanted_services_list_default + ntfy_systemd_wanted_services_list_auto + ntfy_systemd_wanted_services_list_custom }}"
+ntfy_systemd_wanted_services_list_default: []
+ntfy_systemd_wanted_services_list_auto: []
+ntfy_systemd_wanted_services_list_custom: []
+
+# Control if message cache is stored in a SQLite file
+# If set to `false`, messages are cached in-memory.
+# See: https://docs.ntfy.sh/config/#message-cache
+ntfy_cache_file_enabled: true
 
 # Control how attachments can be uploaded via PUT.
 ntfy_attachment_enabled: false

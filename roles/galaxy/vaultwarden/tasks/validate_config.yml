@@ -1,4 +1,6 @@
+# SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
 # SPDX-FileCopyrightText: 2023 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2025 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -10,6 +12,9 @@
       Please change your configuration to rename the variable (`{{ item.old }}` -> `{{ item.new }}`).
   when: "lookup('ansible.builtin.varnames', ('^' + item.old + '$'), wantlist=True) | length > 0"
   with_items:
+    - { "old": "vaultwarden_data_dir_path", "new": "vaultwarden_data_path" }
+    - { "old": "vaultwarden_cache_dir_path", "new": "vaultwarden_cache_path" }
+    - { "old": "vaultwarden_ephemeral_dir_path", "new": "vaultwarden_ephemeral_path" }
     - { "old": "vaultwarden_container_labels_traefik_rule_ui", "new": "vaultwarden_container_labels_traefik_rule" }
     - { "old": "vaultwarden_container_labels_traefik_rule_websocket", "new": "<Removed. See https://github.com/dani-garcia/vaultwarden/pull/3404>" }
     - { "old": "vaultwarden_config_websocket_enabled", "new": "<Removed. See https://github.com/dani-garcia/vaultwarden/pull/3404>" }
@@ -24,6 +29,12 @@
     - { "old": "vaultwarden_systemd_wanted_systemd_services_list_auto", "new": "vaultwarden_systemd_wanted_services_list_auto" }
     - { "old": "vaultwarden_systemd_wanted_systemd_services_list_custom", "new": "vaultwarden_systemd_wanted_services_list_custom" }
     - { "old": "vaultwarden_container_additional_environment_variables", "new": "vaultwarden_environment_variables_additional_variables" }
+    - { "old": "vaultwarden_http_header_content_permission_policy", "new": "vaultwarden_http_header_permissions_policy" }
+    - { "old": "vaultwarden_database_hostname", "new": "vaultwarden_database_postgres_hostname" }
+    - { "old": "vaultwarden_database_port", "new": "vaultwarden_database_postgres_port" }
+    - { "old": "vaultwarden_database_username", "new": "vaultwarden_database_postgres_username" }
+    - { "old": "vaultwarden_database_password", "new": "vaultwarden_database_postgres_password" }
+    - { "old": "vaultwarden_database_sslmode", "new": "vaultwarden_database_postgres_sslmode" }
 
 - name: Fail if required Vaultwarden settings not defined
   ansible.builtin.fail:
@@ -37,14 +48,49 @@
     - "name": "vaultwarden_container_labels_traefik_compression_middleware_name"
       when: "{{ vaultwarden_container_labels_traefik_compression_middleware_enabled }}"
 
+- name: Fail if Vaultwarden database type invalid
+  ansible.builtin.fail:
+    msg: >-
+      vaultwarden_database_type must be 'mysql', 'postgres', or 'sqlite'
+  when: "vaultwarden_database_type not in ['mysql', 'postgres', 'sqlite']"
+
 - name: Fail if required Vaultwarden + Postgres integration settings not defined
   ansible.builtin.fail:
     msg: >-
       You need to define a required configuration setting (`{{ item }}`) when `vaultwarden_database_type` is `postgres`
   when: "vaultwarden_database_type == 'postgres' and lookup('vars', item, default='') | string | length == 0"
   with_items:
-    - vaultwarden_database_username
-    - vaultwarden_database_password
+    - vaultwarden_database_postgres_hostname
+    - vaultwarden_database_postgres_password
+
+- name: Fail if required Vaultwarden + MySQL integration settings not defined
+  ansible.builtin.fail:
+    msg: >-
+      You need to define a required configuration setting (`{{ item }}`) when `vaultwarden_database_type` is `mysql`
+  when: "vaultwarden_database_type == 'mysql' and lookup('vars', item, default='') | string | length == 0"
+  with_items:
+    - vaultwarden_database_mysql_hostname
+    - vaultwarden_database_mysql_password
+
+- name: Fail if SMTP settings are missing (and SMTP is enabled by setting host)
+  ansible.builtin.fail:
+    msg: >-
+      You need to define a required configuration setting (`{{ item }}`) to correctly set up email via SMTP.
+  when: "vaultwarden_config_smtp_host !='' and lookup('vars', item, default='') | string | length == 0"
+  with_items:
+    - vaultwarden_config_smtp_from
+
+- name: Fail if SMTP security setting is invalid
+  ansible.builtin.fail:
+    msg: >-
+      vaultwarden_config_smtp_security must be 'starttls', 'force_tls', or 'off'
+  when: "vaultwarden_config_smtp_security not in ['starttls', 'force_tls', 'off']"
+
+- name: Fail if Vaultwarden logging level is invalid
+  ansible.builtin.fail:
+    msg: >-
+      vaultwarden_config_log_level must be 'trace', 'debug', 'info', 'warn', 'error', or 'off'
+  when: "vaultwarden_config_log_level not in ['trace', 'debug', 'info', 'warn', 'error', 'off']"
 
 - name: Run if Traefik is enabled
   when: vaultwarden_container_labels_traefik_enabled | bool

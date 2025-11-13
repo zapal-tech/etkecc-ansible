@@ -100,18 +100,23 @@ def get_version_url(repo_url, version):
 
 
 def get_version_url_custom(repo_url, version):
-    github_repos = ['github.com/matrix-org/rageshake', 'github.com/Snapchat/KeyDB',
-                    'github.com/grafana/grafana', 'github.com/Tecnativa/docker-socket-proxy',
-                    'github.com/the-draupnir-project/Draupnir', 'github.com/Erikvl87/docker-languagetool',
-                    'github.com/superseriousbusiness/gotosocial', 'github.com/sissbruecker/linkding',
-                    'github.com/SchildiChat/schildichat-desktop']
     if 'github.com/nginx/nginx' in repo_url:
         version = version.split('-')[0]
         return f"{repo_url}/releases/tag/release-{version}"
+
     if 'github.com/coturn/coturn' in repo_url:
         return f"{repo_url}/releases/tag/docker%2F{version}"
+
+    github_repos = ['github.com/matrix-org/rageshake', 'github.com/Snapchat/KeyDB',
+                    'github.com/grafana/grafana', 'github.com/Tecnativa/docker-socket-proxy',
+                    'github.com/the-draupnir-project/Draupnir', 'github.com/Erikvl87/docker-languagetool',
+                    'github.com/sissbruecker/linkding', 'github.com/SchildiChat/schildichat-desktop',
+                    'github.com/element-hq/lk-jwt-service', 'github.com/hifi/heisenbridge',
+                    'codeberg.org/superseriousbusiness/gotosocial',]
+
     if not version.startswith('v') and any(repo in repo_url for repo in github_repos):
         return f"{repo_url}/releases/tag/v{version}"
+
     return None
 
 
@@ -173,11 +178,9 @@ if __name__ == "__main__":
 
     with open(os.path.join(os.getcwd(), 'VERSIONS.diff.md'), 'w') as f:
         f.write("## Weekly Recap\n\n")
-        f.write("> The following changes were introduced this week and mentioned in #updates:etke.cc. ")
-        f.write("This summary ensures no one missed them.\n\n")
+        f.write("> These updates were originally shared in #updates:etke.cc and are collected here in a weekly digest for convenience.\n\n")
         f.write("---\n\n")
         f.write("### Component Updates\n\n")
-        f.write("#### Version Changes\n\n")
         for component, old_version, new_version in added_or_changed_lines:
             if old_version == new_version or new_version is None:
                 continue

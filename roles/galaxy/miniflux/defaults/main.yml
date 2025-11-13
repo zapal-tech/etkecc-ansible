@@ -11,7 +11,7 @@ miniflux_identifier: miniflux
 miniflux_base_path: "/{{ miniflux_identifier }}"
 
 # renovate: datasource=docker depName=docker.io/miniflux/miniflux versioning=semver
-miniflux_version: 2.2.11
+miniflux_version: 2.2.14
 
 miniflux_uid: ''
 miniflux_gid: ''
@@ -71,8 +71,14 @@ miniflux_container_labels_traefik_tls_certResolver: default  # noqa var-naming
 miniflux_container_labels_traefik_compression_middleware_enabled: false
 miniflux_container_labels_traefik_compression_middleware_name: ""
 
+# Controls which additional headers to attach to all HTTP requests.
+# To add your own custom request headers, use `miniflux_container_labels_traefik_additional_request_headers_custom`
+miniflux_container_labels_traefik_additional_request_headers: "{{ miniflux_container_labels_traefik_additional_request_headers_auto | combine(miniflux_container_labels_traefik_additional_request_headers_custom) }}"
+miniflux_container_labels_traefik_additional_request_headers_auto: {}
+miniflux_container_labels_traefik_additional_request_headers_custom: {}
+
 # Controls which additional headers to attach to all HTTP responses.
-# To add your own headers, use `miniflux_container_labels_traefik_additional_response_headers_custom`
+# To add your own custom response headers, use `miniflux_container_labels_traefik_additional_response_headers_custom`
 miniflux_container_labels_traefik_additional_response_headers: "{{ miniflux_container_labels_traefik_additional_response_headers_auto | combine(miniflux_container_labels_traefik_additional_response_headers_custom) }}"
 miniflux_container_labels_traefik_additional_response_headers_auto: |
   {{
@@ -80,7 +86,7 @@ miniflux_container_labels_traefik_additional_response_headers_auto: |
     | combine ({'X-XSS-Protection': miniflux_http_header_xss_protection} if miniflux_http_header_xss_protection else {})
     | combine ({'X-Content-Type-Options': miniflux_http_header_content_type_options} if miniflux_http_header_content_type_options else {})
     | combine ({'Content-Security-Policy': miniflux_http_header_content_security_policy} if miniflux_http_header_content_security_policy else {})
-    | combine ({'Permission-Policy': miniflux_http_header_content_permission_policy} if miniflux_http_header_content_permission_policy else {})
+    | combine ({'Permissions-Policy': miniflux_http_header_permissions_policy} if miniflux_http_header_permissions_policy else {})
     | combine ({'Strict-Transport-Security': miniflux_http_header_strict_transport_security} if miniflux_http_header_strict_transport_security and miniflux_container_labels_traefik_tls else {})
   }}
 miniflux_container_labels_traefik_additional_response_headers_custom: {}
@@ -113,9 +119,9 @@ miniflux_http_header_content_type_options: nosniff
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
 miniflux_http_header_content_security_policy: frame-ancestors 'self'
 
-# Specifies the value of the `Permission-Policy` header.
-# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permission-Policy
-miniflux_http_header_content_permission_policy: "{{ 'interest-cohort=()' if miniflux_floc_optout_enabled else '' }}"
+# Specifies the value of the `Permissions-Policy` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy
+miniflux_http_header_permissions_policy: "{{ 'interest-cohort=()' if miniflux_floc_optout_enabled else '' }}"
 
 # Specifies the value of the `Strict-Transport-Security` header.
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
@@ -129,7 +135,7 @@ miniflux_http_header_strict_transport_security: "max-age=31536000; includeSubDom
 # - https://amifloced.org/
 #
 # Of course, a better solution is to just stop using browsers (like Chrome), which participate in such tracking practices.
-# See: `miniflux_content_permission_policy`
+# See: `miniflux_http_header_permissions_policy`
 miniflux_floc_optout_enabled: true
 
 # Controls if HSTS preloading is enabled
@@ -151,7 +157,10 @@ miniflux_systemd_required_services_list_auto: []
 miniflux_systemd_required_services_list_custom: []
 
 # List of systemd services that the Miniflux systemd service wants
-miniflux_systemd_wanted_services_list: []
+miniflux_systemd_wanted_services_list: "{{ miniflux_systemd_wanted_services_list_default + miniflux_systemd_wanted_services_list_auto + miniflux_systemd_wanted_services_list_custom }}"
+miniflux_systemd_wanted_services_list_default: []
+miniflux_systemd_wanted_services_list_auto: []
+miniflux_systemd_wanted_services_list_custom: []
 
 # Optional admin credentials to be created on startup.
 miniflux_admin_login: ''
