@@ -1,32 +1,57 @@
 ---
-
 - ansible.builtin.import_tasks: "{{ role_path }}/tasks/migrate_postgres_data_directory.yml"
 
 - ansible.builtin.import_tasks: "{{ role_path }}/tasks/detect_existing_postgres_version.yml"
 
-# If we have found an existing version (installed from before), we use its corresponding container image.
-# If not, we install using the latest Postgres.
-#
-# Upgrading is supposed to be performed separately and explicitly (see `upgrade_postgres.yml`).
-- ansible.builtin.set_fact:
-    postgres_container_image_to_use: "{{ postgres_container_image_latest if postgres_detected_version_corresponding_docker_image == '' else postgres_detected_version_corresponding_docker_image }}"
+- when: postgres_detected_existing | bool
+  block:
+    - name: Abort if on an unsupported Postgres version
+      ansible.builtin.fail:
+        msg: "You're on Postgres {{ postgres_detected_version }}, which is no longer supported. To upgrade, see docs/maintenance-postgres.md"
+      when: "postgres_detected_version_number == 9"
 
-- name: Abort if on an unsupported Postgres version
-  ansible.builtin.fail:
-    msg: "You're on Postgres {{ postgres_detected_version }}, which is no longer supported. To upgrade, see docs/maintenance-postgres.md"
-  when: "postgres_detected_version.startswith('9.')"
+    - name: Inject warning if detected Postgres version number not eligible
+      when: "postgres_detected_version_number not in postgres_eligible_versions"
+      ansible.builtin.set_fact:
+        devture_playbook_runtime_messages_list: |
+          {{
+            devture_playbook_runtime_messages_list | default([])
+            +
+            [
+              "WARNING: We detected that Postgres version (" + postgres_detected_version_number | string + ") is already installed, but it's not normally eligible for installation for your setup. You or some other role is currently restricting `postgres_allowed_versions` to " + postgres_allowed_versions | to_json + " for compatibility reasons. Perhaps this other role does not support other Postgres versions. You can suppress this warning by force-settting `postgres_allowed_versions` to something like [" + postgres_detected_version_number | to_json + "], though it would be better to figure out where the restriction comes from and to potentially downgrade Postgres to the maximum allowed version (" + postgres_eligible_version_max | string + ") imposed by the current restrictions.",
+            ]
+          }}
 
-- name: Inject warning if on an old version of Postgres
-  ansible.builtin.set_fact:
-    devture_playbook_runtime_messages_list: |
-      {{
-        devture_playbook_runtime_messages_list | default([])
-        +
-        [
-          "NOTE: Your setup is on an old Postgres version ({{ postgres_container_image_to_use }}), while {{ postgres_container_image_latest }} is supported. You can upgrade using --tags=upgrade-postgres"
-        ]
-      }}
-  when: "postgres_container_image_to_use != postgres_container_image_latest"
+    - name: Inject warning if on maximum eligible Postgres version, but held back from the maximum known version
+      when: "postgres_detected_version_number == postgres_eligible_version_max and postgres_eligible_version_max < postgres_known_version_max"
+      ansible.builtin.set_fact:
+        devture_playbook_runtime_messages_list: |
+          {{
+            devture_playbook_runtime_messages_list | default([])
+            +
+            [
+              "NOTE: We detected that Postgres version (" + postgres_detected_version_number | string + ") is already installed. While a newer version (" + postgres_known_version_max | string + ") is normally available, it's not eligible for installation for your setup. You or some other role is currently restricting `postgres_allowed_versions` (likely via `postgres_allowed_versions_auto` or `postgres_allowed_versions_custom`) to " + postgres_allowed_versions | to_json + " for compatibility reasons. Perhaps this other role does not support the newer Postgres version.",
+            ]
+          }}
+
+    - name: Inject warning if on an old version of Postgres
+      ansible.builtin.set_fact:
+        devture_playbook_runtime_messages_list: |
+          {{
+            devture_playbook_runtime_messages_list | default([])
+            +
+            [
+              "NOTE: Your setup is on an old Postgres version (" + postgres_detected_version_number | string + ") and can be upgraded to version " + postgres_available_upgrade_versions | max | string + ". You can upgrade using --tags=upgrade-postgres"
+            ]
+          }}
+      when: "postgres_detected_existing and postgres_available_upgrade_versions | length > 0"
+
+    # If we have found an existing version (installed from before), we use its corresponding container image.
+    # If not, we let `postgres_container_image_to_use` default to the latest eligible version.
+    #
+    # Upgrading is supposed to be performed separately and explicitly (see `upgrade_postgres.yml`).
+    - ansible.builtin.set_fact:
+        postgres_container_image_to_use: "{{ postgres_detected_version_corresponding_container_image }}"
 
 # Even if we don't run the internal server, we still need this for running the CLI
 - name: Ensure postgres container image is pulled
@@ -44,7 +69,7 @@
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    mode: 0700
+    mode: "0700"
     owner: "{{ postgres_uid }}"
     group: "{{ postgres_gid }}"
   with_items:
@@ -58,7 +83,7 @@
     dest: "{{ postgres_base_path }}/{{ item }}"
     owner: "{{ postgres_uid }}"
     group: "{{ postgres_gid }}"
-    mode: 0640
+    mode: "0640"
   with_items:
     - "env-postgres-psql"
     - "env-postgres-server"
@@ -67,7 +92,7 @@
   ansible.builtin.template:
     src: "{{ role_path }}/templates/bin/{{ item }}.j2"
     dest: "{{ postgres_bin_path }}/{{ item }}"
-    mode: 0755
+    mode: "0755"
   with_items:
     - cli
     - cli-non-interactive
@@ -84,7 +109,7 @@
   ansible.builtin.template:
     src: "{{ role_path }}/templates/systemd/postgres.service.j2"
     dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ postgres_identifier }}.service"
-    mode: 0644
+    mode: "0644"
   register: postgres_systemd_service_result
 
 - name: Ensure managed Postgres databases prepared
@@ -107,7 +132,7 @@
         devture_playbook_runtime_messages_list | default([])
         +
         [
-          "NOTE: You have some Postgres backup data in `{{ postgres_data_path }}-auto-upgrade-backup`, which was created during the last major Postgres update you ran. If your setup works well after this upgrade, feel free to delete this whole directory."
+          "NOTE: You have some Postgres backup data in `" + postgres_data_path + "-auto-upgrade-backup`, which was created during the last major Postgres update you ran. If your setup works well after this upgrade, feel free to delete this whole directory."
         ]
       }}
   when: "postgres_data_backup_path_stat.stat.exists"

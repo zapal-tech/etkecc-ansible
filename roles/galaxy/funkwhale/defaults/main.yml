@@ -23,7 +23,7 @@ funkwhale_music_path: "{{ funkwhale_data_path }}/music" # Defines where music fi
 funkwhale_frontend_static_path: "{{ funkwhale_frontend_base_path }}/appstatic"
 
 # renovate: datasource=docker depName=funkwhale/api
-funkwhale_version: 1.4.0
+funkwhale_version: 1.4.1
 
 funkwhale_uid: ''
 funkwhale_gid: ''
@@ -58,10 +58,10 @@ funkwhale_database_password: ''
 # By default, we expect a local container (without SSL), so attempting SSL connections is not necessary.
 funkwhale_database_sslmode: disable
 
-funkwhale_config_redis_hostname: ''
-funkwhale_config_redis_port: 6379
-funkwhale_config_redis_database: 0
-funkwhale_config_redis_url: "redis://{{ funkwhale_config_redis_hostname }}:{{ funkwhale_config_redis_port }}/{{ funkwhale_config_redis_database }}"
+funkwhale_redis_hostname: ''
+funkwhale_redis_port: 6379
+funkwhale_redis_database: 0
+funkwhale_redis_url: "redis://{{ funkwhale_redis_hostname }}:{{ funkwhale_redis_port }}/{{ funkwhale_redis_database }}"
 
 # Can be one of `consolemail://`, `dummymail://`, `smtp://`, `smtp+ssl://` and `smtp+tls://`
 # the default outputs e-mail in the console (journalctl -fu mash-funkwhale-api)
@@ -154,13 +154,13 @@ funkwhale_api_container_labels_traefik_tls: "{{ funkwhale_api_container_labels_t
 funkwhale_api_container_labels_traefik_tls_certResolver: default  # noqa var-naming
 
 # Controls which additional headers to attach to all HTTP requests.
-# To add your own custom request headers, use `funkwhale_container_labels_traefik_additional_response_headers_custom`
+# To add your own custom request headers, use `funkwhale_api_container_labels_traefik_additional_request_headers_custom`
 funkwhale_api_container_labels_traefik_additional_request_headers: "{{ funkwhale_api_container_labels_traefik_additional_request_headers_auto | combine(funkwhale_api_container_labels_traefik_additional_request_headers_custom) }}"
 funkwhale_api_container_labels_traefik_additional_request_headers_auto: {}
 funkwhale_api_container_labels_traefik_additional_request_headers_custom: {}
 
 # Controls which additional headers to attach to all HTTP responses.
-# To add your own custom response headers, use `funkwhale_container_labels_traefik_additional_response_headers_custom`
+# To add your own custom response headers, use `funkwhale_api_container_labels_traefik_additional_response_headers_custom`
 funkwhale_api_container_labels_traefik_additional_response_headers: "{{ funkwhale_api_container_labels_traefik_additional_response_headers_auto | combine(funkwhale_api_container_labels_traefik_additional_response_headers_custom) }}"
 funkwhale_api_container_labels_traefik_additional_response_headers_auto: |
   {{
@@ -168,7 +168,7 @@ funkwhale_api_container_labels_traefik_additional_response_headers_auto: |
     | combine ({'X-XSS-Protection': funkwhale_api_http_header_xss_protection} if funkwhale_api_http_header_xss_protection else {})
     | combine ({'X-Content-Type-Options': funkwhale_api_http_header_content_type_options} if funkwhale_api_http_header_content_type_options else {})
     | combine ({'Content-Security-Policy': funkwhale_api_http_header_content_security_policy} if funkwhale_api_http_header_content_security_policy else {})
-    | combine ({'Permission-Policy': funkwhale_api_http_header_content_permission_policy} if funkwhale_api_http_header_content_permission_policy else {})
+    | combine ({'Permissions-Policy': funkwhale_api_http_header_permissions_policy} if funkwhale_api_http_header_permissions_policy else {})
     | combine ({'Strict-Transport-Security': funkwhale_api_http_header_strict_transport_security} if funkwhale_api_http_header_strict_transport_security and funkwhale_api_container_labels_traefik_tls else {})
   }}
 funkwhale_api_container_labels_traefik_additional_response_headers_custom: {}
@@ -210,9 +210,9 @@ funkwhale_api_http_header_content_type_options: nosniff
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
 funkwhale_api_http_header_content_security_policy: frame-ancestors 'self'
 
-# Specifies the value of the `Permission-Policy` header.
-# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permission-Policy
-funkwhale_api_http_header_content_permission_policy: "{{ 'interest-cohort=()' if funkwhale_api_floc_optout_enabled else '' }}"
+# Specifies the value of the `Permissions-Policy` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy
+funkwhale_api_http_header_permissions_policy: "{{ 'interest-cohort=()' if funkwhale_api_floc_optout_enabled else '' }}"
 
 # Specifies the value of the `Strict-Transport-Security` header.
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
@@ -226,7 +226,7 @@ funkwhale_api_http_header_strict_transport_security: "max-age=31536000; includeS
 # - https://amifloced.org/
 #
 # Of course, a better solution is to just stop using browsers (like Chrome), which participate in such tracking practices.
-# See: `funkwhale_content_permission_policy`
+# See: `funkwhale_api_http_header_permissions_policy`
 funkwhale_api_floc_optout_enabled: true
 
 # Controls if HSTS preloading is enabled
@@ -313,13 +313,13 @@ funkwhale_frontend_container_labels_traefik_tls: "{{ funkwhale_api_container_lab
 funkwhale_frontend_container_labels_traefik_tls_certResolver: default  # noqa var-naming
 
 # Controls which additional headers to attach to all HTTP requests.
-# To add your own custom request headers, use `funkwhale_container_labels_traefik_additional_response_headers_custom`
+# To add your own custom request headers, use `funkwhale_frontend_container_labels_traefik_additional_request_headers_custom`
 funkwhale_frontend_container_labels_traefik_additional_request_headers: "{{ funkwhale_frontend_container_labels_traefik_additional_request_headers_auto | combine(funkwhale_frontend_container_labels_traefik_additional_request_headers_custom) }}"
 funkwhale_frontend_container_labels_traefik_additional_request_headers_auto: {}
 funkwhale_frontend_container_labels_traefik_additional_request_headers_custom: {}
 
 # Controls which additional headers to attach to all HTTP responses.
-# To add your own custom response headers, use `funkwhale_container_labels_traefik_additional_response_headers_custom`
+# To add your own custom response headers, use `funkwhale_frontend_container_labels_traefik_additional_response_headers_custom`
 funkwhale_frontend_container_labels_traefik_additional_response_headers: "{{ funkwhale_frontend_container_labels_traefik_additional_response_headers_auto | combine(funkwhale_frontend_container_labels_traefik_additional_response_headers_custom) }}"
 funkwhale_frontend_container_labels_traefik_additional_response_headers_auto: |
   {{
@@ -327,7 +327,7 @@ funkwhale_frontend_container_labels_traefik_additional_response_headers_auto: |
     | combine ({'X-XSS-Protection': funkwhale_frontend_http_header_xss_protection} if funkwhale_frontend_http_header_xss_protection else {})
     | combine ({'X-Content-Type-Options': funkwhale_frontend_http_header_content_type_options} if funkwhale_frontend_http_header_content_type_options else {})
     | combine ({'Content-Security-Policy': funkwhale_frontend_http_header_content_security_policy} if funkwhale_frontend_http_header_content_security_policy else {})
-    | combine ({'Permission-Policy': funkwhale_frontend_http_header_content_permission_policy} if funkwhale_frontend_http_header_content_permission_policy else {})
+    | combine ({'Permissions-Policy': funkwhale_frontend_http_header_permissions_policy} if funkwhale_frontend_http_header_permissions_policy else {})
     | combine ({'Strict-Transport-Security': funkwhale_frontend_http_header_strict_transport_security} if funkwhale_frontend_http_header_strict_transport_security and funkwhale_frontend_container_labels_traefik_tls else {})
   }}
 funkwhale_frontend_container_labels_traefik_additional_response_headers_custom: {}
@@ -369,9 +369,9 @@ funkwhale_frontend_http_header_content_type_options: nosniff
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
 funkwhale_frontend_http_header_content_security_policy: frame-ancestors 'self'
 
-# Specifies the value of the `Permission-Policy` header.
-# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permission-Policy
-funkwhale_frontend_http_header_content_permission_policy: "{{ 'interest-cohort=()' if funkwhale_frontend_floc_optout_enabled else '' }}"
+# Specifies the value of the `Permissions-Policy` header.
+# See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy
+funkwhale_frontend_http_header_permissions_policy: "{{ 'interest-cohort=()' if funkwhale_frontend_floc_optout_enabled else '' }}"
 
 # Specifies the value of the `Strict-Transport-Security` header.
 # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
@@ -385,7 +385,7 @@ funkwhale_frontend_http_header_strict_transport_security: "max-age=31536000; inc
 # - https://amifloced.org/
 #
 # Of course, a better solution is to just stop using browsers (like Chrome), which participate in such tracking practices.
-# See: `funkwhale_content_permission_policy`
+# See: `funkwhale_frontend_http_header_permissions_policy`
 funkwhale_frontend_floc_optout_enabled: true
 
 # Controls if HSTS preloading is enabled

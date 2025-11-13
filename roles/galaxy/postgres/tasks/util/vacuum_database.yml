@@ -1,16 +1,15 @@
 ---
-
 - name: Generate Postgres database vacuum command
   ansible.builtin.set_fact:
     postgres_vacuum_run_command: >-
       {{ devture_systemd_docker_base_host_command_docker }} run
       --rm
       --name={{ postgres_identifier }}-vacuum
-      --user={{ postgres_uid }}:{{ postgres_gid }}
+      --user={{ postgres_container_uid }}:{{ postgres_container_gid }}
       --cap-drop=ALL
       --network={{ postgres_container_network_for_vacuuming }}
       --env-file={{ postgres_base_path }}/env-postgres-psql
-      {{ postgres_detected_version_corresponding_docker_image }}
+      {{ postgres_detected_version_corresponding_container_image }}
       psql -v ON_ERROR_STOP=1 -h {{ postgres_identifier }} {{ postgres_database_to_vacuum }} -c '{{ postgres_vacuum_query }}'
 
 - name: Note about Postgres vacuum alternative

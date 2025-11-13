@@ -1,5 +1,4 @@
 ---
-
 # It'd be better if this is belonged to `validate_config.yml`, but it would have to be some loop-within-a-loop there,
 # and that's ugly. We also don't expect this to catch errors often. It's more of a defensive last-minute check.
 - name: Fail if managed database data appears invalid
@@ -15,7 +14,7 @@
   ansible.builtin.template:
     src: "{{ role_path }}/templates/sql/init-managed-db-user-and-role.sql.j2"
     dest: "/tmp/{{ postgres_identifier }}-init-managed-db-user-and-role.sql"
-    mode: 0600
+    mode: "0600"
     owner: "{{ postgres_uid }}"
     group: "{{ postgres_gid }}"
 
@@ -24,12 +23,14 @@
     cmd: >-
       {{ devture_systemd_docker_base_host_command_docker }} run
       --rm
-      --user={{ postgres_uid }}:{{ postgres_gid }}
+      --user={{ postgres_container_uid }}:{{ postgres_container_gid }}
+      {% if postgres_container_cap_drop_all_enabled %}
       --cap-drop=ALL
+      {% endif %}
       --env-file={{ postgres_base_path }}/env-postgres-psql
       --network={{ postgres_container_network_for_preparing_databases }}
       --mount type=bind,src=/tmp/{{ postgres_identifier }}-init-managed-db-user-and-role.sql,dst=/{{ postgres_identifier }}-init-managed-db-user-and-role.sql,ro
-      --entrypoint=/bin/sh
+      --entrypoint={{ postgres_container_shell_path }}
       {{ postgres_container_image_to_use }}
       -c
       'psql -h {{ postgres_connection_hostname }} --file=/{{ postgres_identifier }}-init-managed-db-user-and-role.sql'

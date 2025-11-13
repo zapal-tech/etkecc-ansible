@@ -18,8 +18,8 @@ devture_systemd_docker_base_container_network_creation_method: ansible-module
 # valkey customization
 valkey_enabled: "{{ matrix_synapse_workers_enabled or funkwhale_enabled or peertube_enabled or (matrix_hookshot_enabled and matrix_hookshot_encryption_enabled) or matrix_element_call_enabled }}"
 
-peertube_config_redis_db: 13
-funkwhale_config_redis_database: 14
+peertube_redis_db: 13
+funkwhale_redis_database: 14
 matrix_synapse_redis_dbid: 15
 
 # ansible v2.19+
@@ -60,7 +60,6 @@ languagetool_gid: "{{ mash_playbook_gid }}"
 
 languagetool_container_image_registry_prefix_upstream: "{{ matrix_container_global_registry_prefix_override if matrix_container_global_registry_prefix_override else languagetool_container_image_registry_prefix_upstream_default }}"
 
-languagetool_container_network: "{{ matrix_addons_container_network }}"
 languagetool_container_labels_traefik_enabled: "{{ mash_playbook_traefik_labels_enabled }}"
 languagetool_container_labels_traefik_docker_network: "{{ mash_playbook_reverse_proxyable_services_additional_network }}"
 languagetool_container_labels_traefik_entrypoints: "{{ traefik_entrypoint_primary }}"
@@ -91,8 +90,6 @@ linkding_systemd_required_services_list_auto: |
   }}
 
 linkding_container_image_registry_prefix_upstream: "{{ matrix_container_global_registry_prefix_override if matrix_container_global_registry_prefix_override else linkding_container_image_registry_prefix_upstream_default }}"
-
-linkding_container_network: "{{ matrix_addons_container_network }}"
 
 linkding_container_additional_networks_auto: |
   {{
@@ -127,8 +124,6 @@ miniflux_uid: "{{ matrix_user_uid }}"
 miniflux_gid: "{{ matrix_user_gid }}"
 
 miniflux_container_image_registry_prefix_upstream: "{{ matrix_container_global_registry_prefix_override if matrix_container_global_registry_prefix_override else miniflux_container_image_registry_prefix_upstream_default }}"
-
-miniflux_container_network: "{{ matrix_addons_container_network }}"
 
 miniflux_container_additional_networks_auto: |
   {{
@@ -178,8 +173,6 @@ radicale_gid: "{{ matrix_user_gid }}"
 radicale_container_image: "{{ radicale_container_image_registry_prefix }}etkecc/radicale:{{ radicale_container_image_tag }}"
 radicale_container_image_registry_prefix_upstream_default: ghcr.io/
 
-radicale_container_network: "{{ matrix_addons_container_network }}"
-
 radicale_container_additional_networks_auto: |
   {{
     ([matrix_playbook_reverse_proxyable_services_additional_network] if (matrix_playbook_reverse_proxyable_services_additional_network and radicale_container_labels_traefik_enabled) else [])
@@ -207,8 +200,6 @@ uptime_kuma_gid: "{{ matrix_user_gid }}"
 
 uptime_kuma_container_image_registry_prefix_upstream: "{{ matrix_container_global_registry_prefix_override if matrix_container_global_registry_prefix_override else uptime_kuma_container_image_registry_prefix_upstream_default }}"
 
-uptime_kuma_container_network: "{{ matrix_addons_container_network }}"
-
 uptime_kuma_container_additional_networks_auto: |
   {{
     ([matrix_playbook_reverse_proxyable_services_additional_network] if (matrix_playbook_reverse_proxyable_services_additional_network and uptime_kuma_container_labels_traefik_enabled) else [])
@@ -228,6 +219,7 @@ uptime_kuma_container_labels_traefik_tls_certResolver: "{{ traefik_certResolver_
 gotosocial_enabled: false
 gotosocial_identifier: "{{ mash_playbook_service_identifier_prefix }}gotosocial"
 gotosocial_base_path: "{{ mash_playbook_base_path }}/{{ mash_playbook_service_base_directory_name_prefix }}gotosocial"
+gotosocial_container_image_customization_pride_flags_removal_enabled: true
 
 gotosocial_uid: "{{ mash_playbook_uid }}"
 gotosocial_gid: "{{ mash_playbook_gid }}"
@@ -244,8 +236,6 @@ gotosocial_systemd_wanted_services_list_auto: |
 
 gotosocial_container_image_registry_prefix_upstream: "{{ matrix_container_global_registry_prefix_override if matrix_container_global_registry_prefix_override else gotosocial_container_image_registry_prefix_upstream_default }}"
 
-gotosocial_container_network: "{{ matrix_addons_container_network }}"
-
 gotosocial_container_additional_networks_auto: |
   {{
     ([mash_playbook_reverse_proxyable_services_additional_network] if mash_playbook_reverse_proxyable_services_additional_network else [])
@@ -260,6 +250,7 @@ gotosocial_container_labels_traefik_docker_network: "{{ mash_playbook_reverse_pr
 gotosocial_container_labels_traefik_entrypoints: "{{ traefik_entrypoint_primary }}"
 gotosocial_container_labels_traefik_tls_certResolver: "{{ traefik_certResolver_primary }}"
 
+gotosocial_database_type: postgres
 gotosocial_database_hostname: "{{ postgres_identifier if postgres_enabled else '' }}"
 gotosocial_database_port: "{{ '5432' if postgres_enabled else '' }}"
 gotosocial_database_password: "{{ '%s' | format(mash_playbook_generic_secret_key) | password_hash('sha512', 'db.gotosocial', rounds=655555) | to_uuid }}"
@@ -286,18 +277,16 @@ vaultwarden_base_path: "{{ mash_playbook_base_path }}/{{ mash_playbook_service_b
 
 vaultwarden_systemd_required_services_list_auto: |
   {{
-    ([postgres_identifier ~ '.service'] if postgres_enabled and vaultwarden_database_hostname == postgres_identifier else [])
+    ([postgres_identifier ~ '.service'] if postgres_enabled and vaultwarden_database_postgres_hostname == postgres_identifier else [])
   }}
 
 vaultwarden_container_image_registry_prefix_upstream: "{{ matrix_container_global_registry_prefix_override if matrix_container_global_registry_prefix_override else vaultwarden_container_image_registry_prefix_upstream_default }}"
-
-vaultwarden_container_network: "{{ matrix_addons_container_network }}"
 
 vaultwarden_container_additional_networks_auto: |
   {{
     ([mash_playbook_reverse_proxyable_services_additional_network] if mash_playbook_reverse_proxyable_services_additional_network else [])
     +
-    ([postgres_container_network] if postgres_enabled and vaultwarden_database_hostname == postgres_identifier and vaultwarden_container_network != postgres_container_network else [])
+    ([postgres_container_network] if postgres_enabled and vaultwarden_database_postgres_hostname == postgres_identifier and vaultwarden_container_network != postgres_container_network else [])
     +
     ([exim_relay_container_network | default('matrix-exim-relay')] if (exim_relay_enabled | default(false) and vaultwarden_config_smtp_host == exim_relay_identifier | default('matrix-exim-relay') and exim_relay_container_network != vaultwarden_container_network) else [])
   }}
@@ -315,10 +304,10 @@ vaultwarden_container_labels_traefik_tls_certResolver: "{{ traefik_certResolver_
 vaultwarden_container_labels_traefik_compression_middleware_enabled: "{{ matrix_playbook_reverse_proxy_traefik_middleware_compression_enabled }}"
 vaultwarden_container_labels_traefik_compression_middleware_name: "{{ matrix_playbook_reverse_proxy_traefik_middleware_compression_name if matrix_playbook_reverse_proxy_traefik_middleware_compression_enabled else '' }}"
 
-vaultwarden_database_hostname: "{{ postgres_identifier if postgres_enabled else '' }}"
-vaultwarden_database_port: "{{ '5432' if postgres_enabled else '' }}"
-vaultwarden_database_username: "vaultwarden"
-vaultwarden_database_password: "{{ '%s' | format(mash_playbook_generic_secret_key) | password_hash('sha512', 'db.vaultwarden', rounds=655555) | to_uuid }}"
+vaultwarden_database_postgres_hostname: "{{ postgres_identifier if postgres_enabled else '' }}"
+vaultwarden_database_postgres_port: "{{ '5432' if postgres_enabled else '' }}"
+vaultwarden_database_postgres_username: "vaultwarden"
+vaultwarden_database_postgres_password: "{{ '%s' | format(mash_playbook_generic_secret_key) | password_hash('sha512', 'db.vaultwarden', rounds=655555) | to_uuid }}"
 
 # role-specific:exim_relay
 vaultwarden_config_smtp_from: "{{ exim_relay_sender_address if exim_relay_enabled else '' }}"
@@ -355,8 +344,6 @@ firezone_systemd_required_services_list_auto: |
 
 firezone_container_image_registry_prefix_upstream: "{{ matrix_container_global_registry_prefix_override if matrix_container_global_registry_prefix_override else firezone_container_image_registry_prefix_upstream_default }}"
 
-firezone_container_network: "{{ matrix_addons_container_network }}"
-
 firezone_container_additional_networks_auto: |
   {{
     ([mash_playbook_reverse_proxyable_services_additional_network] if mash_playbook_reverse_proxyable_services_additional_network else [])
@@ -381,7 +368,6 @@ funkwhale_base_path: "{{ mash_playbook_base_path }}/{{ mash_playbook_service_bas
 
 funkwhale_uid: "{{ mash_playbook_uid }}"
 funkwhale_gid: "{{ mash_playbook_gid }}"
-funkwhale_container_network: "{{ matrix_addons_container_network }}"
 
 funkwhale_database_hostname: "{{ postgres_identifier if postgres_enabled else '' }}"
 funkwhale_database_port: "{{ '5432' if postgres_enabled else '' }}"
@@ -397,7 +383,7 @@ funkwhale_email_from: "{{ exim_relay_sender_address if exim_relay_enabled else '
 funkwhale_account_email_verification_enforce: "{{ exim_relay_enabled | default(false) }}"
 funkwhale_django_secret_key: "{{ '%s' | format(mash_playbook_generic_secret_key) | password_hash('sha512', 'funkwhale', rounds=655555) | to_uuid }}"
 
-funkwhale_config_redis_hostname: "{{ valkey_identifier if valkey_enabled else '' }}"
+funkwhale_redis_hostname: "{{ valkey_identifier if valkey_enabled else '' }}"
 
 funkwhale_api_systemd_required_services_list_auto: |
   {{
@@ -419,7 +405,7 @@ funkwhale_api_container_additional_networks_auto: |
     +
     ([exim_relay_container_network | default('matrix-exim-relay')] if (exim_relay_enabled | default(false) and funkwhale_email_host == exim_relay_identifier | default('matrix-exim-relay') and exim_relay_container_network != funkwhale_container_network) else [])
     +
-    ([valkey_container_network] if valkey_enabled and funkwhale_config_redis_hostname == valkey_identifier else [])
+    ([valkey_container_network] if valkey_enabled and funkwhale_redis_hostname == valkey_identifier else [])
   }}
 
 funkwhale_frontend_container_additional_networks_auto: |
@@ -455,7 +441,6 @@ peertube_base_path: "{{ mash_playbook_base_path }}/{{ mash_playbook_service_base
 
 peertube_uid: "{{ mash_playbook_uid }}"
 peertube_gid: "{{ mash_playbook_gid }}"
-peertube_container_network: "{{ matrix_addons_container_network }}"
 peertube_container_rtmp_host_bind_port: 1935
 
 # role-specific:exim_relay
@@ -471,9 +456,9 @@ peertube_container_additional_networks_auto: |
     (
       ([mash_playbook_reverse_proxyable_services_additional_network] if mash_playbook_reverse_proxyable_services_additional_network else [])
       +
-      ([postgres_container_network] if postgres_enabled and peertube_config_database_hostname == postgres_identifier and peertube_container_network != postgres_container_network else [])
+      ([postgres_container_network] if postgres_enabled and peertube_database_hostname == postgres_identifier and peertube_container_network != postgres_container_network else [])
       +
-      ([valkey_container_network] if valkey_enabled and peertube_config_redis_hostname == valkey_identifier else [])
+      ([valkey_container_network] if valkey_enabled and peertube_redis_hostname == valkey_identifier else [])
       +
       ([exim_relay_container_network | default('matrix-exim-relay')] if (exim_relay_enabled | default(false) and peertube_config_smtp_hostname == exim_relay_identifier | default('matrix-exim-relay') and exim_relay_container_network != peertube_container_network) else [])
     ) | unique
@@ -484,20 +469,20 @@ peertube_container_labels_traefik_docker_network: "{{ mash_playbook_reverse_prox
 peertube_container_labels_traefik_entrypoints: "{{ traefik_entrypoint_primary }}"
 peertube_container_labels_traefik_tls_certResolver: "{{ traefik_certResolver_primary }}"
 
-peertube_config_database_hostname: "{{ postgres_identifier if postgres_enabled else '' }}"
-peertube_config_database_port: "{{ '5432' if postgres_enabled else '' }}"
-peertube_config_database_username: peertube
-peertube_config_database_password: "{{ '%s' | format(mash_playbook_generic_secret_key) | password_hash('sha512', 'db.peertube', rounds=655555) | to_uuid }}"
+peertube_database_hostname: "{{ postgres_identifier if postgres_enabled else '' }}"
+peertube_database_port: "{{ '5432' if postgres_enabled else '' }}"
+peertube_database_username: peertube
+peertube_database_password: "{{ '%s' | format(mash_playbook_generic_secret_key) | password_hash('sha512', 'db.peertube', rounds=655555) | to_uuid }}"
 
 # role-specific:valkey
-peertube_config_redis_hostname: "{{ valkey_identifier if valkey_enabled else '' }}"
+peertube_redis_hostname: "{{ valkey_identifier if valkey_enabled else '' }}"
 # /role-specific:valkey
 
 peertube_systemd_required_services_list_auto: |
   {{
-    ([postgres_identifier ~ '.service'] if postgres_enabled and peertube_config_database_hostname == postgres_identifier else [])
+    ([postgres_identifier ~ '.service'] if postgres_enabled and peertube_database_hostname == postgres_identifier else [])
     +
-    ([valkey_identifier ~ '.service'] if valkey_enabled | default(false) and peertube_config_redis_hostname == valkey_identifier | default('matrix-valkey') else [])
+    ([valkey_identifier ~ '.service'] if valkey_enabled | default(false) and peertube_redis_hostname == valkey_identifier | default('matrix-valkey') else [])
   }}
 
 peertube_systemd_wanted_services_list_auto: |
@@ -595,8 +580,8 @@ postgres_managed_databases_additional: |
     +
     ([{
       'name': vaultwarden_database_name,
-      'username': vaultwarden_database_username,
-      'password': vaultwarden_database_password,
+      'username': vaultwarden_database_postgres_username,
+      'password': vaultwarden_database_postgres_password,
     }] if vaultwarden_enabled else [])
     +
     ([{
@@ -612,9 +597,9 @@ postgres_managed_databases_additional: |
       }] if funkwhale_enabled else [])
     +
     ([{
-      'name': peertube_config_database_name,
-      'username': peertube_config_database_username,
-      'password': peertube_config_database_password,
+      'name': peertube_database_hostname,
+      'username': peertube_database_username,
+      'password': peertube_database_password,
     }] if peertube_enabled else [])
   }}
 

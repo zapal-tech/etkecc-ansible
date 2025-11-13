@@ -19,8 +19,8 @@
       "enabled": true,
       "automerge": true,
       "automergeType": "branch",
-      "schedule": ["* 0-6 1 * *"],
-      "automergeSchedule": ["* 0-6 1 * *"]
+      "schedule": ["* * 1 * *"],
+      "automergeSchedule": ["* * 1-3 * *"]
     }
   ],
   "customManagers": [
@@ -30,7 +30,7 @@
         "/defaults/main.yml$/"
       ],
       "matchStrings": [
-        "(?<name>postgres_container_image_v\\d+):\\s*[\"']?{{\\s*[^}]+\\s*}}\\s*postgres:(?<currentValue>[^}]+)\\s*\\{\\{\\s*[^}]+\\s*\\}\\}"
+        "(?<name>postgres_container_image_v\\d+_version):\\s*\"(?<currentValue>[^\"]+)\""
       ],
       "depNameTemplate": "postgres",
       "datasourceTemplate": "docker",

@@ -127,6 +127,8 @@ def format_feeds_from_git_repos(git_repos):
                 atomFilePath = git_repo.replace('.git', '') + '/-/tags?format=atom'
             elif 'git.osgeo.org' in git_repo: # gitea
                 atomFilePath = git_repo.replace('.git', '') + '.atom'
+            elif 'forgejo.ellis.link' in git_repo: # forgejo
+                atomFilePath = git_repo.rstrip('/') + '/atom/'
             elif 'dev.funkwhale.audio' in git_repo: # gitlab
                 atomFilePath = git_repo.replace('.git', '') + '/-/tags?format=atom'
             else:
@@ -153,7 +155,7 @@ def format_feeds_from_git_repos(git_repos):
     return feeds
 
 def dump_opml_file_from_feeds(feeds):
-    tree = ET.ElementTree('tree')
+    tree = ET.ElementTree()
 
     opml = ET.Element('opml', {'version': '1.0'})
     head = ET.SubElement(opml, 'head')
