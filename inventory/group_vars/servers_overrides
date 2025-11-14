@@ -1,0 +1,69 @@
+---
+# Matrix Synapse
+matrix_synapse_enabled: true
+matrix_synapse_workers_enabled: true
+matrix_synapse_workers_preset: specialized-workers
+#
+# Matrix Synapse templates
+#matrix_synapse_container_image_customizations_templates_enabled: true
+#
+# Our templates live in a templates/ directory within the repository.
+# If they're at the root path, delete this line.
+#
+# matrix_synapse_container_image_customizations_templates_in_container_template_files_relative_path: templates
+# matrix_synapse_container_image_customizations_templates_git_repository_url: git@github.com:organization/repository.git
+# matrix_synapse_container_image_customizations_templates_git_repository_branch: main
+# matrix_synapse_container_image_customizations_templates_git_repository_keyscan_enabled: true
+# matrix_synapse_container_image_customizations_templates_git_repository_keyscan_hostname: github.com
+#
+# If your git repository is public, do not define the private key (remove the variable).
+# matrix_synapse_container_image_customizations_templates_git_repository_ssh_private_key:
+#   |
+#   -----BEGIN OPENSSH PRIVATE KEY-----
+#   ...
+#   -----END OPENSSH PRIVATE KEY-----
+
+# Element Client
+matrix_client_element_enabled: true
+# matrix_client_element_default_theme: dark
+matrix_client_element_themes_enabled: true
+matrix_client_element_hostname: chat.{{ matrix_domain }}
+
+# Element Admin
+matrix_element_admin_enabled: false
+matrix_element_admin_hostname: matrix-admin.{{ matrix_domain }}
+matrix_element_admin_path_prefix: /
+
+# Synapse Admin
+matrix_synapse_admin_enabled: true
+matrix_synapse_admin_hostname: matrix-admin.{{ matrix_domain }}
+matrix_synapse_admin_path_prefix: /
+
+# Bridges & Integrations
+matrix_hookshot_enabled: true
+matrix_synapse_email_server_implementation: relay # Required for matrix-exim-relay
+
+# Element Call + LiveKit
+matrix_element_call_enabled: true
+matrix_element_call_hostname: call.{{ matrix_domain }}
+
+# Monitoring (Prometheus + Grafana)
+prometheus_enabled: true
+prometheus_node_exporter_enabled: true
+prometheus_postgres_exporter_enabled: true
+grafana_enabled: true
+grafana_hostname: matrix-stats.{{ matrix_domain }}
+
+matrix_synapse_metrics_enabled: true
+matrix_synapse_metrics_proxying_enabled: true
+matrix_synapse_usage_exporter_enabled: true
+
+# Media Storage (S3)
+matrix_synapse_ext_synapse_s3_storage_provider_enabled: true
+
+# Emails
+matrix_synapse_email_enabled: true
+matrix_exim_relay_enabled: true
+
+# 7. Utilities
+traefik_certs_dumper_enabled: true
