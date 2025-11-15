@@ -25,23 +25,11 @@ matrix_synapse_workers_preset: specialized-workers
 
 # Element Client
 matrix_client_element_enabled: true
-# matrix_client_element_default_theme: dark
 matrix_client_element_themes_enabled: true
 matrix_client_element_hostname: chat.{{ matrix_domain }}
 
-# Element Admin
-matrix_element_admin_enabled: false
-matrix_element_admin_hostname: matrix-admin.{{ matrix_domain }}
-matrix_element_admin_path_prefix: /
-
-# Synapse Admin
-matrix_synapse_admin_enabled: true
-matrix_synapse_admin_hostname: matrix-admin.{{ matrix_domain }}
-matrix_synapse_admin_path_prefix: /
-
 # Bridges & Integrations
 matrix_hookshot_enabled: true
-matrix_synapse_email_server_implementation: relay # Required for matrix-exim-relay
 
 # Element Call + LiveKit
 matrix_element_call_enabled: true
@@ -65,5 +53,9 @@ matrix_synapse_ext_synapse_s3_storage_provider_enabled: true
 matrix_synapse_email_enabled: true
 matrix_exim_relay_enabled: true
 
-# 7. Utilities
-traefik_certs_dumper_enabled: true
+# Postgres backups
+postgres_backup_enabled: true
+postgres_backup_schedule: 0 */4 * * *
+postgres_backup_keep_days: 42
+postgres_backup_keep_weeks: 8
+postgres_backup_keep_months: 12

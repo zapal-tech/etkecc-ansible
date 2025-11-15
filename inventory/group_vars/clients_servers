@@ -1,0 +1,4 @@
+# Synapse Admin
+matrix_synapse_admin_enabled: true
+matrix_synapse_admin_hostname: matrix-admin.{{ matrix_domain }}
+matrix_synapse_admin_path_prefix: /
