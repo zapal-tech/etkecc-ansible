@@ -1,6 +1,4 @@
 ---
-python:
-  - passlib
 collections:
   - name: community.general
   - name: community.docker
