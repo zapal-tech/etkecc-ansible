@@ -2,6 +2,21 @@
 # Proxy
 matrix_playbook_reverse_proxy_type: playbook-managed-traefik
 
+# SSL Certificates
+traefik_config_certificatesResolvers_acme_email: "admin@{{ matrix_domain }}"
+traefik_config_certificatesResolvers_acme_dnsChallenge_enabled: true
+traefik_config_certificatesResolvers_acme_dnsChallenge_provider: "cloudflare"
+traefik_config_certificatesResolvers_acme_dnsChallenge_delayBeforeCheck: 60
+traefik_config_certificatesResolvers_acme_dnsChallenge_resolvers:
+  - "1.1.1.1:53"
+# traefik_environment_variables: |
+#   CF_ZONE_API_TOKEN=... # Zone/Zone/Read permission (scoped to your domain)
+#   CF_DNS_API_TOKEN=... # Zone/DNS/Edit permission (scoped to your domain)
+#   LEGO_DISABLE_CNAME_SUPPORT=true
+
+# Homeserver implementation
+matrix_homeserver_implementation: synapse
+
 # Matrix Synapse
 matrix_synapse_enabled: true
 matrix_synapse_workers_enabled: true
