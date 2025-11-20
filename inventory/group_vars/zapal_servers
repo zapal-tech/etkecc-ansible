@@ -1,0 +1,12 @@
+# Element Client
+matrix_client_element_default_theme: dark
+
+# Element Admin
+matrix_element_admin_enabled: true
+matrix_element_admin_hostname: matrix-admin.{{ matrix_domain }}
+matrix_element_admin_path_prefix: /
+
+# Matrix Authentication Service
+matrix_authentication_service_enabled: true
+matrix_authentication_service_config_database_database: "matrix_authentication_service"
+matrix_authentication_service_config_database_username: "matrix_authentication_service"

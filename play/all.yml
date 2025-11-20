@@ -1,6 +1,6 @@
 ---
 - name: "Set up a Matrix server"
-  hosts: "{{ target if target is defined else 'etke_servers' }}"
+  hosts: "{{ target if target is defined else 'matrix_servers' }}"
   become: true
   vars:
     matrix_playbook_docker_installation_enabled: false
@@ -51,7 +51,6 @@
     - custom/matrix-bridge-steam
     - custom/matrix-bridge-heisenbridge
     - custom/matrix-bridge-hookshot
-    - custom/matrix-bridge-zulip
     - custom/matrix-bot-matrix-reminder-bot
     - custom/matrix-bot-maubot
     - custom/matrix-bot-buscarron
