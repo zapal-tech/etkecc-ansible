@@ -8,7 +8,7 @@
 mash_playbook_service_identifier_prefix: matrix-
 mash_playbook_generic_secret_key: "{{ matrix_homeserver_generic_secret_key }}"
 mash_playbook_base_path: "{{ matrix_base_data_path }}"
-mash_playbook_service_base_directory_name_prefix: ""
+mash_playbook_service_base_directory_name_prefix: ''
 mash_playbook_uid: "{{ matrix_user_uid }}"
 mash_playbook_gid: "{{ matrix_user_gid }}"
 mash_playbook_traefik_labels_enabled: "{{ matrix_playbook_traefik_labels_enabled }}"
@@ -30,7 +30,7 @@ matrix_dendrite_max_file_size_bytes: 1073741824
 matrix_conduit_max_request_size: 20_000_000
 matrix_media_repo_metrics_enabled: false
 matrix_bot_draupnir_config_web_synapseHTTPAntispam_enabled: false
-matrix_prometheus_nginxlog_exporter_container_metrics_port: "4040"
+matrix_prometheus_nginxlog_exporter_container_metrics_port: '4040'
 matrix_media_repo_identifier: matrix-media-repo
 matrix_media_repo_metrics_port: 9000
 
@@ -151,7 +151,7 @@ miniflux_database_password: "{{ '%s' | format(matrix_homeserver_generic_secret_k
 
 # Unlike MDAD, we use https://github.com/etkecc/app (ghcr.io/etkecc/app) which enables some additional features
 matrix_client_element_docker_image: "{{ matrix_client_element_docker_image_registry_prefix }}etkecc/app:{{ matrix_client_element_version }}"
-matrix_client_element_docker_image_registry_prefix_upstream_default: ghcr.io/
+matrix_client_element_docker_image_registry_prefix_upstream_default: gchr.io/
 
 ########################################################################
 #                                                                      #
@@ -377,8 +377,8 @@ funkwhale_database_username: "{{ funkwhale_identifier }}"
 funkwhale_email_protocol: "{{ 'smtp://' if exim_relay_enabled else 'consolemail://' }}"
 funkwhale_email_host: "{{ exim_relay_identifier | default('matrix-exim-relay') }}"
 funkwhale_email_port: 8025
-funkwhale_email_username: ""
-funkwhale_email_password: ""
+funkwhale_email_username: ''
+funkwhale_email_password: ''
 funkwhale_email_from: "{{ exim_relay_sender_address if exim_relay_enabled else '' }}"
 funkwhale_account_email_verification_enforce: "{{ exim_relay_enabled | default(false) }}"
 funkwhale_django_secret_key: "{{ '%s' | format(mash_playbook_generic_secret_key) | password_hash('sha512', 'funkwhale', rounds=655555) | to_uuid }}"
@@ -502,6 +502,7 @@ peertube_systemd_wanted_services_list_auto: |
 # The Synapse network is available everywhere where Synapse is enabled though.
 matrix_synapse_auto_compressor_container_network: "{{ matrix_synapse_container_network }}"
 
+
 ########################################################################
 #                                                                      #
 # com.devture.ansible.role.systemd_service_manager                     #
@@ -549,6 +550,7 @@ devture_systemd_service_manager_services_list_additional: |
 # /com.devture.ansible.role.systemd_service_manager                    #
 #                                                                      #
 ########################################################################
+
 
 ########################################################################
 #                                                                      #
